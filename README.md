@@ -5,6 +5,8 @@
 
 ## Develop and Test
 
+Edit the file function.rb to provide the necessary implementation.
+
     ruby function.rb
 
 ## Deploy
