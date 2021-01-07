@@ -8,7 +8,7 @@ import tempfile
 import zipfile
 
 AWS_ACCOUNT_ID = "671946291905"
-AWS_PROFILE = "cs291"
+AWS_PROFILE = "scalableinternetservices"
 AWS_REGION = "us-west-2"
 
 aws_username = None
