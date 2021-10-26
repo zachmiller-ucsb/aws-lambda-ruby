@@ -159,7 +159,7 @@ def create_or_update_lambda_function():
                     "--handler=function.main",
                     "--role",
                     f"arn:aws:iam::{AWS_ACCOUNT_ID}:role/ScalableInternetServicesLambda",
-                    "--runtime=ruby2.5",
+                    "--runtime=ruby2.7",
                     "--zip",
                     f"fileb://{fp.name}",
                 ],
