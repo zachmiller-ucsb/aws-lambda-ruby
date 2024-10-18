@@ -47,18 +47,7 @@ def main(event:, context:)
 
   # '/auth/token'
   if event['path'] == '/auth/token'
-    proper_content_type = true
-    if event.has_key?('headers')
-      content_type = event['headers'].find { |key, _| key.downcase == 'Content-Type'.downcase }
-      if (content_type.nil? || content_type.size != 2 ||
-         event['headers'][content_type[0]] != 'application/json')
-         proper_content_type = false
-      end
-    else
-      proper_content_type = false
-    end
-
-    if !proper_content_type
+    if !valid_header?(event, 'Content-Type', 'application/json')
       return response(status: 415)
     elsif (!event.has_key?('body') ||
         !valid_json?(event['body']))
@@ -91,6 +80,21 @@ def valid_json?(string)
   rescue JSON::ParserError, TypeError => e
     false
   end
+end
+
+def valid_header?(event, expected_key, expected_value)
+  valid = true
+  if event.has_key?('headers')
+    key_value = event['headers'].find { |key, _| key.downcase == expected_key.downcase }
+    if (key_value.nil? || key_value.size != 2 ||
+        event['headers'][key_value[0]] != expected_value)
+        valid = false
+    end
+  else
+    valid = false
+  end
+
+  return valid
 end
 
 if $PROGRAM_NAME == __FILE__
