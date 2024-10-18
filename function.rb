@@ -22,9 +22,11 @@ def main(event:, context:)
   # '/'
   if event['path'] == '/'
     payload = nil
-    if !event.has_key?('headers') || !event['headers'].has_key?('Authorization')
+
+    authorization_attr = header_get_attr(event, 'Authorization')
+    if authorization_attr.nil?
       return response(status: 403)
-    elsif event['headers']['Authorization'] =~ /^Bearer (\S+)$/
+    elsif authorization_attr =~ /^Bearer (\S+)$/
       begin
         decoded_jwt = JWT.decode($1, ENV['JWT_SECRET'], true, { algorithm: 'HS256' })
         payload = decoded_jwt[0]
@@ -47,9 +49,13 @@ def main(event:, context:)
 
   # '/auth/token'
   if event['path'] == '/auth/token'
-    if !valid_header?(event, 'Content-Type', 'application/json')
+    content_type_attr = header_get_attr(event, 'Content-Type')
+    if (content_type_attr.nil? ||
+        content_type_attr != 'application/json')
       return response(status: 415)
-    elsif (!event.has_key?('body') ||
+    end
+    
+    if (!event.has_key?('body') ||
         !valid_json?(event['body']))
       return response(status: 422)
     else
@@ -82,19 +88,16 @@ def valid_json?(string)
   end
 end
 
-def valid_header?(event, expected_key, expected_value)
-  valid = true
+def header_get_attr(event, case_sensitive_key)
+  value = nil
   if event.has_key?('headers')
-    key_value = event['headers'].find { |key, _| key.downcase == expected_key.downcase }
-    if (key_value.nil? || key_value.size != 2 ||
-        event['headers'][key_value[0]] != expected_value)
-        valid = false
+    key_value = event['headers'].find { |key, _| key.downcase == case_sensitive_key.downcase }
+    if (!key_value.nil? && key_value.size == 2)
+        value = key_value[1]
     end
-  else
-    valid = false
   end
 
-  return valid
+  return value
 end
 
 if $PROGRAM_NAME == __FILE__
