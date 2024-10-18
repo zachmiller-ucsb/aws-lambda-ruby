@@ -30,21 +30,16 @@ def main(event:, context:)
       begin
         decoded_jwt = JWT.decode($1, ENV['JWT_SECRET'], true, { algorithm: 'HS256' })
         payload = decoded_jwt[0]
+      rescue JWT::ImmatureSignature, JWT::ExpiredSignature
+        return response(status: 401)
       rescue JWT::DecodeError
         return response(status: 403)
       end
+    else
+      return response(status: 403)
     end
 
-    # check that decoded_jwt has all its parts.
-    # The first entry is the encoded payload, 
-    # and the second is the algorithm used to decode
-    required_fields = [ 'data', 'exp', 'nbf' ]
-    if (payload.nil? ||
-        !required_fields.all? { |field| payload.has_key?(field) })
-      return response(status: 403)
-    else
-      return response(body: payload['data'])
-    end
+    return response(body: payload['data'])
   end
 
   # '/auth/token'
@@ -117,8 +112,8 @@ if $PROGRAM_NAME == __FILE__
   # Generate a token
   payload = {
     data: { user_id: 128 },
-    exp: Time.now.to_i + 1,
-    nbf: Time.now.to_i
+    exp: Time.now.to_i + 5,
+    nbf: Time.now.to_i + 3
   }
   token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
   # Call /
