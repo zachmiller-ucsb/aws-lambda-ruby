@@ -47,18 +47,27 @@ def main(event:, context:)
 
   # '/auth/token'
   if event['path'] == '/auth/token'
-    if (!event.has_key?('headers') || 
-        !event['headers'].has_key?('Content-Type') ||
-        event['headers']['Content-Type'] != 'application/json')
+    proper_content_type = true
+    if event.has_key?('headers')
+      content_type = event['headers'].find { |key, _| key.downcase == 'Content-Type'.downcase }
+      if (content_type.nil? || content_type.size != 2 ||
+         event['headers'][content_type[0]] != 'application/json')
+         proper_content_type = false
+      end
+    else
+      proper_content_type = false
+    end
+
+    if !proper_content_type
       return response(status: 415)
     elsif (!event.has_key?('body') ||
-           !valid_json?(event['body']))
+        !valid_json?(event['body']))
       return response(status: 422)
     else
       payload = {
-        data: event['body'],
-        exp: Time.now.to_i + 5,
-        nbf: Time.now.to_i + 2
+        'data': JSON.parse(event['body']),
+        'exp': Time.now.to_i + 5,
+        'nbf': Time.now.to_i + 2
       }
 
       token = JWT.encode payload, ENV['JWT_SECRET'], 'HS256'
@@ -79,7 +88,7 @@ def valid_json?(string)
   begin
     JSON.parse string
     true
-  rescue JSON::ParserError
+  rescue JSON::ParserError, TypeError => e
     false
   end
 end
